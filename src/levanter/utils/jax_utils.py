@@ -67,6 +67,8 @@ def multihost_broadcast_sync(obj: X, is_source: Optional[bool] = None, timeout: 
     import jax._src.distributed as distributed
     from jaxlib.xla_extension import DistributedRuntimeClient
 
+    logger.info("libs are imported")
+
     client: Optional[DistributedRuntimeClient] = distributed.global_state.client
 
     if client is None:
@@ -76,6 +78,7 @@ def multihost_broadcast_sync(obj: X, is_source: Optional[bool] = None, timeout: 
     if is_source:
         # serialized = pickle.dumps(obj, 0)  # 0 is pickle protocol. jax only accepts utf-8, and 0 gives us ascii
         # client.key_value_set(key, serialized.decode("ascii"))
+        logger.info("The source is set")
         serialized = json.dumps(obj)
         client.key_value_set(key, serialized)
 
