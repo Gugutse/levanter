@@ -1,3 +1,4 @@
+import logging
 import contextlib
 import json
 from dataclasses import fields
@@ -9,6 +10,8 @@ from jax import numpy as jnp
 from jaxtyping import PRNGKeyArray, PyTree
 
 from haliax.jax_utils import is_jax_array_like
+
+logger = logging.getLogger(__name__)
 
 
 X = TypeVar("X")
@@ -45,13 +48,16 @@ def parameter_count(model: PyTree):
 _sync_counter = 0
 
 
-def multihost_broadcast_sync(obj: X, is_source: Optional[bool] = None, timeout: float = 700.0) -> X:
+def multihost_broadcast_sync(obj: X, is_source: Optional[bool] = None, timeout: float = 2000.0) -> X:
     """
     Uses jax's unpublished distributed api to sync a value across hosts using json dump. If is_source is None, then
     process_index 0 is the source.
     """
     global _sync_counter
     key = f"LEVANTER_MULTIHOST_BROADCAST_SYNC{_sync_counter}"
+
+    logger.info(f"LEVANTER_MULTIHOST_BROADCAST_SYNC{_sync_counter}")
+
     if is_source is None:
         is_source = jax.process_index() == 0
 
@@ -64,6 +70,7 @@ def multihost_broadcast_sync(obj: X, is_source: Optional[bool] = None, timeout: 
     client: Optional[DistributedRuntimeClient] = distributed.global_state.client
 
     if client is None:
+        logger.warning("multihost_broadcast_sync requires jax distributed client to be initialized")
         raise RuntimeError("multihost_broadcast_sync requires jax distributed client to be initialized")
 
     if is_source:
@@ -73,6 +80,7 @@ def multihost_broadcast_sync(obj: X, is_source: Optional[bool] = None, timeout: 
         client.key_value_set(key, serialized)
 
     client.wait_at_barrier(f"multihost_broadcast_sync{_sync_counter}", timeout_in_ms=int(timeout * 1000.0))
+    logger.info(f"Finished waiting at barrier for {_sync_counter} process")
 
     if not is_source:
         serialized = client.blocking_key_value_get(key, timeout_in_ms=int(timeout * 1000.0))
