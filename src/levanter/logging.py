@@ -229,6 +229,8 @@ class WandbConfig:
                 id=r.id,
                 group=r.group,
             )
+            logger.info("Metadata is ready")
+
             metadata_to_share = jax_utils.multihost_broadcast_sync(
                 metadata_to_share, is_source=jax.process_index() == 0
             )

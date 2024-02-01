@@ -45,7 +45,7 @@ def parameter_count(model: PyTree):
 _sync_counter = 0
 
 
-def multihost_broadcast_sync(obj: X, is_source: Optional[bool] = None, timeout: float = 600.0) -> X:
+def multihost_broadcast_sync(obj: X, is_source: Optional[bool] = None, timeout: float = 700.0) -> X:
     """
     Uses jax's unpublished distributed api to sync a value across hosts using json dump. If is_source is None, then
     process_index 0 is the source.
